@@ -1,0 +1,201 @@
+# BatiSaaS - Configuration Apache optimisée
+# Version: 2.0.0
+
+# Active le moteur de réécriture
+RewriteEngine On
+
+# Force HTTPS (décommenter en production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Redirection du dossier public
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Sécurité - Désactiver l'affichage des répertoires
+Options -Indexes
+
+# Sécurité - Bloquer l'accès aux fichiers sensibles
+<FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+</FilesMatch>
+
+# Sécurité - Protéger les fichiers de configuration
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "database.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Sécurité - Headers de sécurité
+<IfModule mod_headers.c>
+    # Prévention du clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Protection XSS
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Prévention MIME sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Référer policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content Security Policy (ajuster selon vos besoins)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'"
+
+    # Permissions Policy
+    Header always set Permissions-Policy "geolocation=(self), microphone=(), camera=(self)"
+</IfModule>
+
+# Compression GZIP
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/xml application/xhtml+xml application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Cache - Optimisation des performances
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    # CSS et JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+
+    # Fonts
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType font/otf "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+
+    # HTML
+    ExpiresByType text/html "access plus 0 seconds"
+
+    # Manifeste PWA
+    ExpiresByType application/manifest+json "access plus 1 week"
+</IfModule>
+
+# Headers de cache
+<IfModule mod_headers.c>
+    # Cache images
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+
+    # Cache CSS et JS
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </FilesMatch>
+
+    # Pas de cache pour HTML
+    <FilesMatch "\.(html|htm|php)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
+# Types MIME
+<IfModule mod_mime.c>
+    # JavaScript
+    AddType application/javascript js
+    AddType application/json json
+
+    # Fonts
+    AddType font/ttf ttf
+    AddType font/otf otf
+    AddType font/woff woff
+    AddType font/woff2 woff2
+
+    # Images
+    AddType image/webp webp
+    AddType image/svg+xml svg
+
+    # Manifeste PWA
+    AddType application/manifest+json webmanifest
+
+    # Service Worker
+    AddType application/javascript js
+</IfModule>
+
+# UTF-8 par défaut
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .html .css .js .xml .json .rss .atom
+</IfModule>
+
+# Limite de taille d'upload (ajuster selon vos besoins)
+php_value upload_max_filesize 50M
+php_value post_max_size 50M
+php_value max_execution_time 300
+php_value max_input_time 300
+
+# Désactiver le PHP dans uploads
+<Directory "uploads">
+    php_flag engine off
+    <FilesMatch "\.php$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</Directory>
+
+# Service Worker - Pas de cache
+<Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</Files>
+
+# Manifeste PWA - Cache court
+<Files "manifest.json">
+    Header set Cache-Control "max-age=604800, public"
+</Files>
+
+# Protection contre les hotlinks d'images (optionnel)
+# RewriteCond %{HTTP_REFERER} !^$
+# RewriteCond %{HTTP_REFERER} !^https?://(www\.)?votredomaine\.com [NC]
+# RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [F,NC]
+
+# Bloquer les user agents malveillants (optionnel)
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase User-Agent "^libwww-perl" bad_bot
+    SetEnvIfNoCase User-Agent "^wget" bad_bot
+    SetEnvIfNoCase User-Agent "^EmailCollector" bad_bot
+    SetEnvIfNoCase User-Agent "^EmailSiphon" bad_bot
+    SetEnvIfNoCase User-Agent "^EmailWolf" bad_bot
+
+    <Limit GET POST>
+        Order Allow,Deny
+        Allow from all
+        Deny from env=bad_bot
+    </Limit>
+</IfModule>
+
+# Redirection des erreurs
+ErrorDocument 404 /404.html
+ErrorDocument 403 /403.html
+ErrorDocument 500 /500.html
+
+# Performances - KeepAlive
+<IfModule mod_headers.c>
+    Header set Connection keep-alive
+</IfModule>

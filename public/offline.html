@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hors ligne - BatiSaaS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .offline-icon {
+            font-size: 6rem;
+            margin-bottom: 1.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        h1 {
+            color: #1f2937;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #6b7280;
+            font-size: 1.125rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .features {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .features h3 {
+            color: #374151;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .features ul {
+            list-style: none;
+        }
+
+        .features li {
+            padding: 0.5rem 0;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .features li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .retry-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .retry-button:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #fef3c7;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 0.875rem;
+        }
+
+        .status.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .checking .spinner {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>Vous êtes hors ligne</h1>
+        <p>
+            Pas de connexion Internet détectée. BatiSaaS fonctionne en mode hors ligne
+            avec des fonctionnalités limitées.
+        </p>
+
+        <div class="features">
+            <h3>Disponible hors ligne:</h3>
+            <ul>
+                <li>Pointage arrivée/départ</li>
+                <li>Prise de photos</li>
+                <li>Remplir carnet de bord</li>
+                <li>Créer réserves</li>
+                <li>Consultation données récentes</li>
+            </ul>
+        </div>
+
+        <button class="retry-button" onclick="checkConnection()">
+            <span class="button-text">Réessayer</span>
+            <div class="spinner"></div>
+        </button>
+
+        <div class="status" id="status">
+            Vérifiez votre connexion Internet et réessayez
+        </div>
+    </div>
+
+    <script>
+        function checkConnection() {
+            const button = document.querySelector('.retry-button');
+            const status = document.getElementById('status');
+
+            button.classList.add('checking');
+            button.querySelector('.button-text').textContent = 'Vérification...';
+
+            // Vérifier la connexion
+            fetch('/api/ping', { method: 'HEAD', cache: 'no-cache' })
+                .then(() => {
+                    status.className = 'status online';
+                    status.textContent = '✓ Connexion rétablie! Redirection...';
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                })
+                .catch(() => {
+                    button.classList.remove('checking');
+                    button.querySelector('.button-text').textContent = 'Réessayer';
+                    status.className = 'status';
+                    status.textContent = 'Toujours hors ligne. Les données seront synchronisées au retour en ligne.';
+                });
+        }
+
+        // Vérification automatique toutes les 30 secondes
+        setInterval(() => {
+            if (navigator.onLine) {
+                checkConnection();
+            }
+        }, 30000);
+
+        // Écouter l'événement online
+        window.addEventListener('online', () => {
+            checkConnection();
+        });
+
+        window.addEventListener('offline', () => {
+            const status = document.getElementById('status');
+            status.className = 'status';
+            status.textContent = 'Connexion perdue. Mode hors ligne activé.';
+        });
+    </script>
+</body>
+</html>
