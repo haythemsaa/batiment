@@ -1,8 +1,8 @@
 # BatiSaaS - Fichiers à ignorer
 
 # Configuration
-config/database.php
 .env
+# Note: config/database.php est inclus pour faciliter l'installation
 
 # Fichiers système
 .DS_Store
@@ -44,6 +44,6 @@ tmp/
 temp/
 
 # Sauvegardes
-*.sql
+# *.sql (désactivé pour inclure le schéma initial)
 *.sql.gz
 backup/
