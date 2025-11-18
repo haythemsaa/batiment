@@ -1,0 +1,132 @@
+{
+  "name": "BatiSaaS - Gestion de Chantiers BTP",
+  "short_name": "BatiSaaS",
+  "description": "Solution SaaS #1 en Europe pour la gestion de chantiers BTP - Devis, Factures, Planning, Gantt, Documents",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "scope": "/",
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/images/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Dashboard principal"
+    },
+    {
+      "src": "/images/screenshot2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Planning Gantt"
+    },
+    {
+      "src": "/images/screenshot3.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Gestion des chantiers"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouveau chantier",
+      "short_name": "Chantier",
+      "description": "Créer un nouveau chantier",
+      "url": "/chantiers/create",
+      "icons": [{ "src": "/images/shortcut-chantier.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nouveau devis",
+      "short_name": "Devis",
+      "description": "Créer un nouveau devis",
+      "url": "/devis/create",
+      "icons": [{ "src": "/images/shortcut-devis.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Planning",
+      "short_name": "Planning",
+      "description": "Voir le planning Gantt",
+      "url": "/planning/gantt",
+      "icons": [{ "src": "/images/shortcut-planning.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Photos",
+      "short_name": "Photos",
+      "description": "Prendre une photo",
+      "url": "/photos/upload",
+      "icons": [{ "src": "/images/shortcut-photo.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "photos",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  }
+}
