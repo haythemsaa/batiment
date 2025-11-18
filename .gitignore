@@ -1,0 +1,49 @@
+# BatiSaaS - Fichiers à ignorer
+
+# Configuration
+config/database.php
+.env
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+storage/logs/*.log
+*.log
+
+# Uploads
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+
+# Sessions
+storage/sessions/*
+!storage/sessions/.gitkeep
+
+# Vendor (si utilisation de Composer)
+vendor/
+
+# Node modules (si utilisation de npm)
+node_modules/
+
+# Fichiers temporaires
+tmp/
+temp/
+
+# Sauvegardes
+*.sql
+*.sql.gz
+backup/

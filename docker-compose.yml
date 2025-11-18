@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Serveur web PHP + Apache
+  web:
+    image: php:8.2-apache
+    container_name: batisaas_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_NAME=batisaas
+      - DB_USER=batisaas_user
+      - DB_PASS=batisaas_password
+    depends_on:
+      - db
+    command: >
+      bash -c "
+      a2enmod rewrite &&
+      docker-php-ext-install pdo pdo_mysql mysqli &&
+      apache2-foreground
+      "
+    networks:
+      - batisaas_network
+
+  # Base de données MySQL
+  db:
+    image: mysql:8.0
+    container_name: batisaas_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: batisaas
+      MYSQL_USER: batisaas_user
+      MYSQL_PASSWORD: batisaas_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - batisaas_network
+
+  # PHPMyAdmin (optionnel)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: batisaas_phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: batisaas_user
+      PMA_PASSWORD: batisaas_password
+    depends_on:
+      - db
+    networks:
+      - batisaas_network
+
+volumes:
+  db_data:
+
+networks:
+  batisaas_network:
+    driver: bridge
