@@ -398,3 +398,335 @@ INSERT INTO clients (company_id, type, first_name, last_name, email, phone, addr
 (1, 'company', NULL, NULL, 'contact@construction-sarl.com', '0698765432', '78 Boulevard Haussmann', 'Paris', '75008');
 
 UPDATE clients SET company_name = 'Construction SARL', siret = '98765432109876' WHERE id = 2;
+
+-- Table des photos géolocalisées
+CREATE TABLE IF NOT EXISTS photos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    chantier_id INT,
+    uploaded_by INT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    file_path VARCHAR(500) NOT NULL,
+    thumbnail_path VARCHAR(500),
+    file_size INT,
+    mime_type VARCHAR(100),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    gps_accuracy DECIMAL(10, 2),
+    taken_at DATETIME,
+    exif_data JSON,
+    category VARCHAR(50),
+    tags TEXT,
+    is_before_after BOOLEAN DEFAULT FALSE,
+    before_photo_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (before_photo_id) REFERENCES photos(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_chantier (chantier_id),
+    INDEX idx_date (taken_at),
+    INDEX idx_category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des stocks et inventaire
+CREATE TABLE IF NOT EXISTS stocks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    reference VARCHAR(100),
+    description TEXT,
+    category VARCHAR(100),
+    unit VARCHAR(50) DEFAULT 'unité',
+    quantity_current DECIMAL(10, 2) DEFAULT 0,
+    quantity_min DECIMAL(10, 2) DEFAULT 0,
+    quantity_max DECIMAL(10, 2),
+    unit_price DECIMAL(15, 2),
+    location VARCHAR(255),
+    supplier_id INT,
+    photo_path VARCHAR(500),
+    status ENUM('active', 'discontinued') DEFAULT 'active',
+    last_inventory_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (supplier_id) REFERENCES fournisseurs(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_category (category),
+    INDEX idx_reference (reference),
+    FULLTEXT idx_search (name, description, reference)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des mouvements de stock
+CREATE TABLE IF NOT EXISTS stock_movements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    stock_id INT NOT NULL,
+    chantier_id INT,
+    type ENUM('in', 'out', 'adjustment', 'inventory') NOT NULL,
+    quantity DECIMAL(10, 2) NOT NULL,
+    quantity_before DECIMAL(10, 2),
+    quantity_after DECIMAL(10, 2),
+    unit_price DECIMAL(15, 2),
+    total_price DECIMAL(15, 2),
+    reference VARCHAR(100),
+    reason VARCHAR(255),
+    notes TEXT,
+    performed_by INT,
+    movement_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE SET NULL,
+    FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_stock (stock_id),
+    INDEX idx_date (movement_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des feuilles de temps / pointages
+CREATE TABLE IF NOT EXISTS timesheets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    user_id INT NOT NULL,
+    chantier_id INT,
+    clock_in DATETIME NOT NULL,
+    clock_out DATETIME,
+    clock_in_latitude DECIMAL(10, 8),
+    clock_in_longitude DECIMAL(11, 8),
+    clock_out_latitude DECIMAL(10, 8),
+    clock_out_longitude DECIMAL(11, 8),
+    break_duration INT DEFAULT 0,
+    total_hours DECIMAL(5, 2),
+    notes TEXT,
+    status ENUM('clocked_in', 'clocked_out', 'validated', 'rejected') DEFAULT 'clocked_in',
+    validated_by INT,
+    validated_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE SET NULL,
+    FOREIGN KEY (validated_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_user (user_id),
+    INDEX idx_chantier (chantier_id),
+    INDEX idx_date (clock_in)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des messages / messagerie interne
+CREATE TABLE IF NOT EXISTS messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    recipient_id INT NOT NULL,
+    chantier_id INT,
+    subject VARCHAR(255),
+    message TEXT NOT NULL,
+    attachment_path VARCHAR(500),
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at DATETIME,
+    parent_message_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_message_id) REFERENCES messages(id) ON DELETE CASCADE,
+    INDEX idx_company (company_id),
+    INDEX idx_sender (sender_id),
+    INDEX idx_recipient (recipient_id),
+    INDEX idx_chantier (chantier_id),
+    INDEX idx_read (is_read),
+    FULLTEXT idx_search (subject, message)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des listes de réserves / punch lists
+CREATE TABLE IF NOT EXISTS punch_lists (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    chantier_id INT NOT NULL,
+    task_id INT,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    location VARCHAR(255),
+    category VARCHAR(100),
+    priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+    status ENUM('open', 'in_progress', 'resolved', 'verified', 'closed') DEFAULT 'open',
+    reported_by INT NOT NULL,
+    assigned_to INT,
+    photo_path VARCHAR(500),
+    due_date DATE,
+    resolved_at DATETIME,
+    resolved_by INT,
+    verified_at DATETIME,
+    verified_by INT,
+    resolution_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES chantier_tasks(id) ON DELETE SET NULL,
+    FOREIGN KEY (reported_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (verified_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_chantier (chantier_id),
+    INDEX idx_status (status),
+    INDEX idx_priority (priority),
+    FULLTEXT idx_search (title, description)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table du carnet de bord quotidien
+CREATE TABLE IF NOT EXISTS carnet_bord (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    chantier_id INT NOT NULL,
+    date DATE NOT NULL,
+    weather VARCHAR(50),
+    temperature DECIMAL(4, 1),
+    workers_count INT,
+    work_description TEXT,
+    materials_used TEXT,
+    equipment_used TEXT,
+    incidents TEXT,
+    progress_notes TEXT,
+    photos JSON,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_daily_entry (chantier_id, date),
+    INDEX idx_company (company_id),
+    INDEX idx_chantier (chantier_id),
+    INDEX idx_date (date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des versions de documents
+CREATE TABLE IF NOT EXISTS document_versions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    document_id INT NOT NULL,
+    parent_version_id INT,
+    version INT NOT NULL DEFAULT 1,
+    file_path VARCHAR(500) NOT NULL,
+    file_size INT,
+    uploaded_by INT,
+    change_notes TEXT,
+    is_latest BOOLEAN DEFAULT TRUE,
+    signature_data TEXT,
+    signature_date DATETIME,
+    signed_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_version_id) REFERENCES document_versions(id) ON DELETE SET NULL,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (signed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_document (document_id),
+    INDEX idx_version (version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des notifications en temps réel
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    user_id INT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    action_url VARCHAR(500),
+    related_type VARCHAR(50),
+    related_id INT,
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at DATETIME,
+    priority ENUM('low', 'normal', 'high') DEFAULT 'normal',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_company (company_id),
+    INDEX idx_user (user_id),
+    INDEX idx_read (is_read),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des commentaires sur tâches
+CREATE TABLE IF NOT EXISTS task_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    comment TEXT NOT NULL,
+    attachment_path VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES chantier_tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_company (company_id),
+    INDEX idx_task (task_id),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des journaux d'audit (RGPD)
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    user_id INT,
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50),
+    entity_id INT,
+    old_values JSON,
+    new_values JSON,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_user (user_id),
+    INDEX idx_entity (entity_type, entity_id),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des affectations utilisateurs-chantiers
+CREATE TABLE IF NOT EXISTS chantier_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    chantier_id INT NOT NULL,
+    user_id INT NOT NULL,
+    role VARCHAR(50),
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_assignment (chantier_id, user_id),
+    INDEX idx_company (company_id),
+    INDEX idx_chantier (chantier_id),
+    INDEX idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table des pièces jointes aux chantiers
+CREATE TABLE IF NOT EXISTS chantier_attachments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    chantier_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_type VARCHAR(100),
+    file_size INT,
+    uploaded_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_company (company_id),
+    INDEX idx_chantier (chantier_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

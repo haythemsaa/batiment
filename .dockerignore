@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+README.md
+SUMMARY.md
+QUICKSTART.md
+USER_GUIDE.md
+API_DOCUMENTATION.md
+ANALYSE_CONCURRENTS.md
+
+# Logs
+*.log
+storage/logs/*
+!storage/logs/.gitkeep
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+
+# Sessions
+storage/sessions/*
+!storage/sessions/.gitkeep
+
+# Backups
+backups/*
+!backups/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environnement
+.env.local
+.env.*.local
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Tests
+tests/
+phpunit.xml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
